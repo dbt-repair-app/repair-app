@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบแจ้งซ่อมคอมพิวเตอร์ แผนกเทคโนโลยีธุรกิจดิจิทัล (DBT Repair System)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-[#0b0f17] text-slate-100 antialiased selection:bg-blue-500 selection:text-white">
+
+  <!-- ==================== 1. FULLSCREEN AUTH SCREEN (LOGIN / ADMIN LOGIN / REGISTER) ==================== -->
+  <div id="authScreen" class="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-gradient-to-b from-slate-950 via-[#0b0f17] to-slate-950">
+    <div class="w-full max-w-md rounded-3xl glass-card border border-slate-700/70 p-6 sm:p-8 space-y-6 shadow-2xl shadow-blue-950/40 animate-fade-in">
+      
+      <!-- Logo Header -->
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-600/30 text-white font-bold mx-auto mb-3">
+          <i data-lucide="wrench" class="w-7 h-7"></i>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">ระบบแจ้งซ่อมคอมพิวเตอร์</h1>
+        <p class="text-xs text-slate-400">แผนกเทคโนโลยีธุรกิจดิจิทัล (ห้อง 121 - 127)</p>
+      </div>
+
+      <!-- 3-Way Auth Tab Switcher -->
+      <div class="flex items-center p-1 bg-slate-900/90 rounded-2xl border border-slate-800 text-xs">
+        <button id="tabUserLoginBtn" onclick="switchAuthTab('user-login')" class="py-2 px-3 rounded-xl font-bold text-xs bg-blue-600 text-white shadow-md shadow-blue-600/30 transition-all flex-1 text-center">
+          👤 ผู้ใช้งาน
+        </button>
+        <button id="tabAdminLoginBtn" onclick="switchAuthTab('admin-login')" class="py-2 px-3 rounded-xl font-medium text-xs text-slate-400 hover:text-white transition-all flex-1 text-center">
+          🔐 ช่าง/Admin
+        </button>
+        <button id="tabRegBtn" onclick="switchAuthTab('register')" class="py-2 px-3 rounded-xl font-medium text-xs text-slate-400 hover:text-white transition-all flex-1 text-center">
+          📝 สมัครสมาชิก
+        </button>
+      </div>
+
+      <!-- A. USER LOGIN FORM (นักเรียน / อาจารย์) -->
+      <form id="authUserLoginForm" onsubmit="handleUserLoginSubmit(event)" class="space-y-4">
+        <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-center gap-2">
+          <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+          <span>สำหรับนักเรียน และ อาจารย์ประจำแผนก</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">อีเมล (Email)</label>
+          <input 
+            type="email" 
+            id="loginEmail" 
+            placeholder="ระบุอีเมลผู้ใช้งาน" 
+            required 
+            class="w-full p-3 rounded-xl glass-input text-sm"
+          >
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">รหัสผ่าน (Password)</label>
+          <input 
+            type="password" 
+            id="loginPassword" 
+            placeholder="••••••••" 
+            required 
+            class="w-full p-3 rounded-xl glass-input text-sm"
+          >
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all active:scale-98">
+          เข้าสู่ระบบผู้ใช้งาน
+        </button>
+      </form>
+
+      <!-- B. DEDICATED ADMIN LOGIN FORM (หน้าเข้าสู่ระบบสำหรับ Admin / ช่างซ่อม) -->
+      <form id="authAdminLoginForm" onsubmit="handleAdminLoginSubmit(event)" class="space-y-4 hidden">
+        <div class="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-xs text-blue-300 flex items-start gap-2.5">
+          <i data-lucide="shield-check" class="w-5 h-5 shrink-0 text-blue-400 mt-0.5"></i>
+          <div>
+            <strong class="block font-semibold">หน้าเข้าสู่ระบบผู้ดูแลระบบ (Admin Portal Login)</strong>
+            <span class="text-[11px] text-slate-300 opacity-90">เฉพาะเจ้าหน้าที่ไอที ช่างซ่อมคอมพิวเตอร์ และ Admin แผนก DBT</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">อีเมลช่างไอที / Admin (Email)</label>
+          <input 
+            type="email" 
+            id="adminLoginEmail" 
+            placeholder="admin@dbt.ac.th" 
+            required 
+            class="w-full p-3 rounded-xl glass-input text-sm border-blue-500/30 focus:border-blue-400"
+          >
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">รหัสผ่าน Admin (Password)</label>
+          <input 
+            type="password" 
+            id="adminLoginPassword" 
+            placeholder="••••••••" 
+            required 
+            class="w-full p-3 rounded-xl glass-input text-sm border-blue-500/30 focus:border-blue-400"
+          >
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl shadow-blue-600/30 transition-all active:scale-98 flex items-center justify-center gap-2">
+          <i data-lucide="shield" class="w-4 h-4"></i>
+          <span>เข้าสู่ระบบ Admin / ช่างซ่อม</span>
+        </button>
+      </form>
+
+      <!-- C. REGISTER FORM (สมัครสมาชิก: แยกเฉพาะ นักเรียน / อาจารย์) -->
+      <form id="authRegForm" onsubmit="handleRegisterSubmit(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">ระบุประเภทผู้สมัคร <span class="text-rose-400">*</span></label>
+          <select id="regUserType" class="w-full p-3 rounded-xl glass-input text-sm font-semibold bg-slate-900 border-blue-500/40">
+            <option value="student">👨‍🎓 นักเรียน / นักศึกษา</option>
+            <option value="teacher">👨‍🏫 อาจารย์ประจำแผนก</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">ชื่อ-นามสกุล <span class="text-rose-400">*</span></label>
+          <input 
+            type="text" 
+            id="regName" 
+            placeholder="ระบุชื่อ-นามสกุลจริง" 
+            required 
+            class="w-full p-3 rounded-xl glass-input text-sm"
+          >
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">อีเมล <span class="text-rose-400">*</span></label>
+          <input 
+            type="email" 
+            id="regEmail" 
+            placeholder="ระบุอีเมลสำหรับเข้าใช้งาน" 
+            required 
+            class="w-full p-3 rounded-xl glass-input text-sm"
+          >
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">รหัสผ่าน <span class="text-rose-400">*</span></label>
+          <input 
+            type="password" 
+            id="regPassword" 
+            placeholder="กำหนดรหัสผ่าน" 
+            required 
+            class="w-full p-3 rounded-xl glass-input text-sm"
+          >
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">ชั้นปี / กลุ่มเรียน / ประจำห้องเรียน</label>
+          <input 
+            type="text" 
+            id="regDept" 
+            placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)" 
+            class="w-full p-3 rounded-xl glass-input text-sm"
+          >
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition-all active:scale-98">
+          ยืนยันลงทะเบียนสมาชิก
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ==================== 2. MAIN APP SCREEN (LOGGED IN) ==================== -->
+  <div id="mainAppScreen" class="min-h-screen flex flex-col hidden">
+
+    <!-- MAIN NAVBAR -->
+    <header class="sticky top-0 z-30 bg-slate-900/85 backdrop-blur-xl border-b border-slate-800/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        
+        <!-- App Title -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-600/30 text-white font-bold text-lg">
+            <i data-lucide="wrench" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-base sm:text-lg text-white leading-tight flex items-center gap-2">
+              ระบบแจ้งซ่อมคอมพิวเตอร์ <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-mono border border-blue-500/30">ห้อง 121 - 127</span>
+            </h1>
+            <p class="text-xs text-slate-400">แผนกเทคโนโลยีธุรกิจดิจิทัล (Digital Business Technology)</p>
+          </div>
+        </div>
+
+        <!-- Right Side: Profile & Logout -->
+        <div class="flex items-center gap-3">
+          
+          <div class="flex items-center gap-2.5 bg-slate-800/60 px-3 py-1.5 rounded-2xl border border-slate-700/60">
+            <img id="userAvatarImg" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full object-cover border border-slate-600">
+            <div class="text-left hidden sm:block">
+              <div id="userNameLabel" class="font-semibold text-xs text-slate-200">ชื่อผู้ใช้งาน</div>
+              <div class="flex items-center gap-1">
+                <span id="userRoleBadge" class="px-2 py-0.5 rounded-full text-[10px]">บทบาท</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- New Repair Button -->
+          <button 
+            onclick="openNewRepairModal()"
+            class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-lg shadow-blue-600/25 transition-all flex items-center gap-1.5 active:scale-95"
+          >
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>แจ้งซ่อม</span>
+          </button>
+
+          <!-- Logout Button -->
+          <button 
+            onclick="logoutUser()" 
+            title="ออกจากระบบ"
+            class="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold transition-all flex items-center gap-1"
+          >
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTAINER VIEWS -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+      <!-- ==================== VIEW A: USER PORTAL (หน้าสำหรับคนแจ้งซ่อม: นักเรียน & อาจารย์) ==================== -->
+      <div id="userPortalView" class="space-y-8 hidden">
+        
+        <!-- Welcome Banner -->
+        <div class="p-6 rounded-3xl glass-card border border-blue-500/30 bg-gradient-to-r from-blue-950/40 via-indigo-950/20 to-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl">
+          <div class="space-y-2">
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              👋 พอร์ทัลแจ้งซ่อมประจำห้องเรียน (ห้อง 121 - 127)
+            </span>
+            <h2 class="text-xl sm:text-2xl font-bold text-white">แจ้งซ่อมคอมพิวเตอร์ & ติดตามสถานะงานของคุณ</h2>
+            <p class="text-xs sm:text-sm text-slate-300 max-w-xl">นักเรียนและอาจารย์สามารถส่งคำขอแจ้งซ่อมคอมพิวเตอร์พร้อมแนบรูปภาพประกอบ ช่างไอทีจะได้รับแจ้งเตือนและเข้าดำเนินการอย่างเร่งด่วน</p>
+          </div>
+
+          <button 
+            onclick="openNewRepairModal()"
+            class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl shadow-blue-600/30 transition-all flex items-center gap-2 justify-center shrink-0"
+          >
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            <span>สร้างคำขอแจ้งซ่อมใหม่</span>
+          </button>
+        </div>
+
+        <!-- User Stats Bar -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="p-4 rounded-2xl glass-card border border-amber-500/20 bg-amber-500/5 flex items-center justify-between">
+            <div>
+              <div class="text-xs text-amber-400 font-medium">🟡 งานของคุณที่รอซ่อม</div>
+              <div id="userStatPendingCount" class="text-2xl font-extrabold text-amber-300 mt-1">0</div>
+            </div>
+            <i data-lucide="clock" class="w-8 h-8 text-amber-400/50"></i>
+          </div>
+
+          <div class="p-4 rounded-2xl glass-card border border-blue-500/20 bg-blue-500/5 flex items-center justify-between">
+            <div>
+              <div class="text-xs text-blue-400 font-medium">🔵 ช่างกำลังดำเนินการซ่อม</div>
+              <div id="userStatInProgCount" class="text-2xl font-extrabold text-blue-300 mt-1">0</div>
+            </div>
+            <i data-lucide="wrench" class="w-8 h-8 text-blue-400/50"></i>
+          </div>
+
+          <div class="p-4 rounded-2xl glass-card border border-emerald-500/20 bg-emerald-500/5 flex items-center justify-between">
+            <div>
+              <div class="text-xs text-emerald-400 font-medium">🟢 งานของคุณที่ซ่อมเสร็จแล้ว</div>
+              <div id="userStatDoneCount" class="text-2xl font-extrabold text-emerald-300 mt-1">0</div>
+            </div>
+            <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-400/50"></i>
+          </div>
+        </div>
+
+        <!-- My Tickets Section -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <i data-lucide="history" class="w-5 h-5 text-blue-400"></i>
+            รายการและสถานะคำขอแจ้งซ่อมของคุณ (My Repair Requests)
+          </h3>
+
+          <div id="userMyTicketsContainer" class="space-y-4">
+            <!-- User tickets injected via JS -->
+          </div>
+
+          <!-- Empty State -->
+          <div id="userEmptyState" class="hidden p-10 text-center rounded-3xl glass-card border border-slate-800 space-y-3">
+            <i data-lucide="sparkles" class="w-12 h-12 text-slate-500 mx-auto stroke-1"></i>
+            <h4 class="text-base font-semibold text-slate-300">ยังไม่มีรายการแจ้งซ่อม</h4>
+            <p class="text-xs text-slate-400">เมื่อคุณส่งคำขอแจ้งซ่อม รายการและสถานะการซ่อมโดยช่างไอทีจะแสดงที่นี่</p>
+            <button onclick="openNewRepairModal()" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold shadow-lg shadow-blue-600/20">
+              แจ้งซ่อมเครื่องแรกของคุณ
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- ==================== VIEW B: ADMIN PORTAL (หน้าระบบ ADMIN / ช่างซ่อม) ==================== -->
+      <div id="adminPortalView" class="space-y-8 hidden">
+        
+        <!-- Admin Dashboard Metrics -->
+        <section>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="shield-alert" class="w-5 h-5 text-blue-400"></i>
+              แผงควบคุมระบบ Admin & สรุปสถานะงานแจ้งซ่อม (ห้อง 121 - 127)
+            </h2>
+            <span class="text-xs text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20 font-mono">
+              ศูนย์รวมการรับเรื่อง & อัปเดตสถานะงาน
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            
+            <div class="p-4 rounded-2xl glass-card border border-slate-800">
+              <div class="text-xs text-slate-400 font-medium mb-1">จำนวนงานทั้งหมด</div>
+              <div id="statTotal" class="text-2xl sm:text-3xl font-extrabold text-white">0</div>
+              <div class="text-[10px] text-slate-500 mt-1">รายการรวมทุกห้อง</div>
+            </div>
+
+            <div class="p-4 rounded-2xl glass-card border border-amber-500/20 bg-amber-500/5">
+              <div class="text-xs text-amber-400 font-medium mb-1 flex items-center gap-1">
+                <span>🟡</span> งานรอซ่อม
+              </div>
+              <div id="statPending" class="text-2xl sm:text-3xl font-extrabold text-amber-300">0</div>
+              <div class="text-[10px] text-amber-400/70 mt-1">รอช่างเข้าตรวจสอบ</div>
+            </div>
+
+            <div class="p-4 rounded-2xl glass-card border border-blue-500/20 bg-blue-500/5">
+              <div class="text-xs text-blue-400 font-medium mb-1 flex items-center gap-1">
+                <span>🔵</span> กำลังซ่อม
+              </div>
+              <div id="statInProgress" class="text-2xl sm:text-3xl font-extrabold text-blue-300">0</div>
+              <div class="text-[10px] text-blue-400/70 mt-1">กำลังดำเนินการ</div>
+            </div>
+
+            <div class="p-4 rounded-2xl glass-card border border-emerald-500/20 bg-emerald-500/5">
+              <div class="text-xs text-emerald-400 font-medium mb-1 flex items-center gap-1">
+                <span>🟢</span> งานเสร็จแล้ว
+              </div>
+              <div id="statCompleted" class="text-2xl sm:text-3xl font-extrabold text-emerald-300">0</div>
+              <div class="text-[10px] text-emerald-400/70 mt-1">ปิดงานซ่อมแล้ว</div>
+            </div>
+
+            <div class="p-4 rounded-2xl glass-card border border-rose-500/20 bg-rose-500/5">
+              <div class="text-xs text-rose-400 font-medium mb-1 flex items-center gap-1">
+                <span>⚡</span> งานด่วน/ด่วนมาก
+              </div>
+              <div id="statUrgent" class="text-2xl sm:text-3xl font-extrabold text-rose-300">0</div>
+              <div class="text-[10px] text-rose-400/70 mt-1">เร่งด่วน</div>
+            </div>
+
+            <div class="p-4 rounded-2xl glass-card border border-purple-500/20 bg-purple-500/5">
+              <div class="text-xs text-purple-400 font-medium mb-1 flex items-center gap-1">
+                <span>⏱️</span> เวลาเฉลี่ยซ่อม
+              </div>
+              <div id="statAvgDuration" class="text-2xl sm:text-3xl font-extrabold text-purple-300">0.0 ชม.</div>
+              <div class="text-[10px] text-purple-400/70 mt-1">ต่อหนึ่งงาน</div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Admin PC Grid Matrix Inspector (ห้อง 121 - 127) -->
+        <section class="p-5 sm:p-6 rounded-3xl glass-card border border-slate-800">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <i data-lucide="monitor-dot" class="w-5 h-5 text-blue-400"></i>
+                ผังเครื่องคอมพิวเตอร์รายห้องเรียน 121 - 127 (Interactive PC Inspector)
+              </h2>
+              <p id="currentRoomDescription" class="text-xs text-slate-400 mt-0.5">กดที่เครื่องเพื่อดูประวัติการซ่อม ยอดเสียสะสม และบันทึกอุปกรณ์ที่ถูกเปลี่ยน</p>
+            </div>
+
+            <div class="flex items-center gap-3 text-xs">
+              <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> ปกติ</span>
+              <span class="flex items-center gap-1.5 text-amber-300"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> รอซ่อม</span>
+              <span class="flex items-center gap-1.5 text-blue-300"><span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span> กำลังซ่อม</span>
+              <span class="flex items-center gap-1.5 text-rose-300"><span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> ส่งซ่อมภายนอก</span>
+            </div>
+          </div>
+
+          <div id="roomTabsContainer" class="flex items-center gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none border-b border-slate-800/80">
+            <!-- Room Tabs Injected via JS -->
+          </div>
+
+          <div id="pcGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <!-- PC Nodes Injected via JS -->
+          </div>
+        </section>
+
+        <!-- Admin Graphs & Analytics -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="p-5 rounded-3xl glass-card border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h3 class="font-bold text-slate-200 text-sm mb-1 flex items-center gap-2">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-blue-400"></i>
+                สถิติ: ห้องไหนเสียบ่อยที่สุด (121 - 127)
+              </h3>
+              <p class="text-xs text-slate-400 mb-4">ปริมาณงานซ่อมจำแนกตามห้องเรียน</p>
+            </div>
+            <div class="h-56 relative">
+              <canvas id="chartRoomFailures"></canvas>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-3xl glass-card border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h3 class="font-bold text-slate-200 text-sm mb-1 flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-purple-400"></i>
+                สถิติ: ประเภทปัญหาที่พบบ่อยที่สุด
+              </h3>
+              <p class="text-xs text-slate-400 mb-4">สัดส่วนอาการเสียของอุปกรณ์</p>
+            </div>
+            <div class="h-56 relative">
+              <canvas id="chartTopCategories"></canvas>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-3xl glass-card border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h3 class="font-bold text-slate-200 text-sm mb-1 flex items-center gap-2">
+                <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i>
+                ผลงานการซ่อมของช่างประจำแผนก
+              </h3>
+              <p class="text-xs text-slate-400 mb-4">จำนวนเคสที่ดำเนินการสำเร็จ</p>
+            </div>
+            <div class="h-56 relative">
+              <canvas id="chartTechPerformance"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- Master Ticket Management Table -->
+        <section class="p-5 sm:p-6 rounded-3xl glass-card border border-slate-800 space-y-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <i data-lucide="wrench" class="w-5 h-5 text-blue-400"></i>
+                รายการแจ้งซ่อมทั้งหมด & การจัดการสถานะของ Admin
+              </h2>
+              <p class="text-xs text-slate-400">อัปเดตสถานะงาน (🟡 🔵 🟢 🔴 ⚫) และลงบันทึกการเปลี่ยนอะไหล่</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap items-center gap-2">
+              <input 
+                type="text" 
+                id="searchInput"
+                placeholder="🔍 ค้นหาเลขที่, ห้อง, อาการ..."
+                class="px-3.5 py-2 text-xs rounded-xl glass-input w-44 sm:w-56"
+              >
+
+              <select id="filterStatus" class="px-3 py-2 text-xs rounded-xl glass-input">
+                <option value="all">ทุกสถานะงาน</option>
+                <option value="pending">🟡 รอตรวจสอบ</option>
+                <option value="in_progress">🔵 กำลังดำเนินการ</option>
+                <option value="completed">🟢 ซ่อมเสร็จ</option>
+                <option value="external">🔴 ส่งซ่อมภายนอก</option>
+                <option value="cancelled">⚫ ยกเลิก</option>
+              </select>
+
+              <select id="filterRoom" class="px-3 py-2 text-xs rounded-xl glass-input">
+                <option value="all">ทุกห้องเรียน (121 - 127)</option>
+                <option value="121">ห้อง 121</option>
+                <option value="122">ห้อง 122</option>
+                <option value="123">ห้อง 123</option>
+                <option value="124">ห้อง 124</option>
+                <option value="125">ห้อง 125</option>
+                <option value="126">ห้อง 126</option>
+                <option value="127">ห้อง 127</option>
+              </select>
+
+              <select id="filterUrgency" class="px-3 py-2 text-xs rounded-xl glass-input">
+                <option value="all">ทุกความเร่งด่วน</option>
+                <option value="low">เล็กน้อย</option>
+                <option value="medium">ปกติ</option>
+                <option value="high">ด่วน</option>
+                <option value="critical">ด่วนมาก</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="ticketListContainer" class="space-y-3">
+            <!-- Tickets Injected via JS -->
+          </div>
+        </section>
+
+      </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
+      <p>ระบบแจ้งซ่อมคอมพิวเตอร์ แผนกเทคโนโลยีธุรกิจดิจิทัล (ห้องเรียน 121 - 127)</p>
+    </footer>
+
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. NEW REPAIR REQUEST MODAL -->
+  <div id="repairModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div class="w-full max-w-2xl rounded-3xl glass-modal border border-slate-700/80 p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto animate-fade-in">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            <i data-lucide="laptop" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white">แบบฟอร์มแจ้งซ่อมคอมพิวเตอร์</h3>
+            <p class="text-xs text-slate-400">กรอกข้อมูลรายละเอียดอุปกรณ์ที่ชำรุดเพื่อส่งเรื่องให้ช่างไอที</p>
+          </div>
+        </div>
+        <button onclick="closeRepairModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleNewTicketSubmit(event)" class="space-y-5">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">1. เลือกห้องเรียน (121 - 127) <span class="text-rose-400">*</span></label>
+            <select id="formRoomId" class="w-full p-3 rounded-xl glass-input text-sm" required></select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">2. เลือกหมายเลขเครื่อง <span class="text-rose-400">*</span></label>
+            <select id="formPcNumber" class="w-full p-3 rounded-xl glass-input text-sm font-mono" required></select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-2">3. เลือกประเภทปัญหาที่พบ <span class="text-rose-400">*</span></label>
+          <div id="categoryRadiosContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">4. รายละเอียดเพิ่มเติม <span class="text-rose-400">*</span></label>
+          <textarea 
+            id="formDetails" 
+            rows="3" 
+            required 
+            placeholder="อธิบายลักษณะอาการเสียเพิ่มเติม เช่น จอฟ้าหลังรันโปรแกรม, เมาส์คลิกไม่ติด..."
+            class="w-full p-3 rounded-xl glass-input text-sm"
+          ></textarea>
+        </div>
+
+        <!-- IMAGE UPLOAD SYSTEM -->
+        <div class="space-y-2">
+          <label class="block text-xs font-semibold text-slate-300">
+            5. แนบรูปภาพประกอบอาการเสีย (Upload File / Image)
+          </label>
+          
+          <div 
+            id="fileDropZone" 
+            class="border-2 border-dashed border-slate-700 hover:border-blue-500/70 bg-slate-900/50 hover:bg-slate-900/80 p-5 rounded-2xl text-center transition-all cursor-pointer relative"
+            onclick="document.getElementById('formFileInput').click()"
+          >
+            <input 
+              type="file" 
+              id="formFileInput" 
+              accept="image/*" 
+              class="hidden"
+            >
+            <i data-lucide="image-plus" class="w-8 h-8 text-blue-400 mx-auto mb-2 opacity-80"></i>
+            <p class="text-xs font-semibold text-slate-200">กดที่นี่เพื่อเลือกรูปภาพจากเครื่อง หรือลากไฟล์รูปภาพมาวาง</p>
+            <p class="text-[10px] text-slate-400 mt-1">รองรับไฟล์ PNG, JPG, JPEG, WEBP</p>
+          </div>
+
+          <div id="imagePreviewBox" class="hidden relative p-3 rounded-2xl bg-slate-900/80 border border-slate-700 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <img id="imagePreviewImg" src="" class="w-16 h-16 object-cover rounded-xl border border-slate-600">
+              <div class="text-xs">
+                <span class="text-emerald-400 font-semibold block">✓ อัปโหลดรูปภาพสำเร็จ</span>
+                <span class="text-[11px] text-slate-400">รูปภาพพร้อมแนบในใบแจ้งซ่อม</span>
+              </div>
+            </div>
+            <button 
+              type="button" 
+              onclick="removeUploadedImage()" 
+              class="px-3 py-1.5 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs hover:bg-rose-500/30 transition-all"
+            >
+              🗑️ ลบรูป
+            </button>
+          </div>
+
+          <div class="pt-1">
+            <input 
+              type="text" 
+              id="formImageUrl" 
+              placeholder="หรือวาง URL รูปภาพ (ถ้ามี)" 
+              class="w-full p-2.5 rounded-xl glass-input text-xs"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-2">6. ระดับความเร่งด่วน <span class="text-rose-400">*</span></label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+            <label class="p-2.5 rounded-xl border border-slate-700 bg-slate-800/40 hover:bg-slate-800 cursor-pointer flex items-center justify-center gap-1.5">
+              <input type="radio" name="formUrgency" value="low">
+              <span class="text-emerald-400 font-medium">🟢 เล็กน้อย</span>
+            </label>
+            <label class="p-2.5 rounded-xl border border-slate-700 bg-slate-800/40 hover:bg-slate-800 cursor-pointer flex items-center justify-center gap-1.5">
+              <input type="radio" name="formUrgency" value="medium" checked>
+              <span class="text-blue-400 font-medium">🟡 ปกติ</span>
+            </label>
+            <label class="p-2.5 rounded-xl border border-slate-700 bg-slate-800/40 hover:bg-slate-800 cursor-pointer flex items-center justify-center gap-1.5">
+              <input type="radio" name="formUrgency" value="high">
+              <span class="text-amber-400 font-medium">🟠 ด่วน</span>
+            </label>
+            <label class="p-2.5 rounded-xl border border-slate-700 bg-slate-800/40 hover:bg-slate-800 cursor-pointer flex items-center justify-center gap-1.5">
+              <input type="radio" name="formUrgency" value="critical">
+              <span class="text-rose-400 font-bold">🔴 ด่วนมาก</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <button type="button" onclick="closeRepairModal()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-colors">
+            ยกเลิก
+          </button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/30 transition-all">
+            ส่งข้อมูลแจ้งซ่อม
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- 2. PC HISTORY INSPECTOR MODAL -->
+  <div id="pcHistoryModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div class="w-full max-w-xl rounded-3xl glass-modal border border-slate-700/80 p-6 space-y-5 max-h-[85vh] overflow-y-auto animate-fade-in">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 id="pcModalTitle" class="text-lg font-bold text-white flex items-center gap-2">
+            ห้อง 121 - PC-05
+          </h3>
+          <p id="pcModalSub" class="text-xs text-slate-400">ประวัติการซ่อมสะสมรายเครื่อง</p>
+        </div>
+        <button onclick="closePcHistoryModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="pcHistoryList" class="space-y-3">
+        <!-- Injected via JS -->
+      </div>
+
+      <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+        <button id="btnModalReportThisPc" class="px-4 py-2 text-xs rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 font-semibold transition-all">
+          + แจ้งซ่อมเครื่องนี้
+        </button>
+        <button onclick="closePcHistoryModal()" class="px-4 py-2 text-xs rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 3. TICKET DETAIL & TIMELINE MODAL -->
+  <div id="ticketDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div class="w-full max-w-2xl rounded-3xl glass-modal border border-slate-700/80 p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto animate-fade-in">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="detailModalId" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">REP-000</span>
+            <span id="detailModalStatusBadge" class="px-2.5 py-0.5 rounded-full text-xs font-medium">สถานะ</span>
+          </div>
+          <h3 id="detailModalPc" class="text-xl font-bold text-white mt-1">ห้อง 121 / PC-01</h3>
+        </div>
+        <button onclick="closeTicketDetailModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+        <div>
+          <span class="text-slate-400 block mb-0.5">ประเภทปัญหา</span>
+          <strong id="detailModalCategory" class="text-blue-400">เปิดไม่ติด</strong>
+        </div>
+        <div>
+          <span class="text-slate-400 block mb-0.5">ระดับความเร่งด่วน</span>
+          <strong id="detailModalUrgency" class="text-amber-400">ปกติ</strong>
+        </div>
+        <div>
+          <span class="text-slate-400 block mb-0.5">ผู้แจ้งซ่อม</span>
+          <strong id="detailModalReporter" class="text-slate-200">อ.วิภาวี</strong>
+        </div>
+        <div>
+          <span class="text-slate-400 block mb-0.5">ช่างรับผิดชอบ</span>
+          <strong id="detailModalTech" class="text-slate-200">ช่างสมชาย</strong>
+        </div>
+      </div>
+
+      <div>
+        <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">รายละเอียดอาการเสีย</h4>
+        <p id="detailModalDetails" class="text-sm text-slate-200 bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">...</p>
+      </div>
+
+      <div class="p-3 rounded-xl bg-indigo-950/20 border border-indigo-500/30 text-xs">
+        <span class="text-indigo-300 font-bold block mb-0.5">🔩 อุปกรณ์ที่เปลี่ยน / บันทึกการแก้ไข:</span>
+        <span id="detailModalEquipment" class="text-slate-200">-</span>
+      </div>
+
+      <div id="detailModalImageBox" class="hidden"></div>
+
+      <div>
+        <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <i data-lucide="history" class="w-4 h-4 text-blue-400"></i>
+          Timeline ประวัติกิจกรรมการซ่อม
+        </h4>
+        <div id="detailTimelineContainer" class="pt-2">
+          <!-- Timeline Injected via JS -->
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2 border-t border-slate-800">
+        <button onclick="closeTicketDetailModal()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 4. UPDATE STATUS MODAL (ADMIN) -->
+  <div id="updateStatusModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div class="w-full max-w-md rounded-3xl glass-modal border border-slate-700/80 p-6 space-y-5 animate-fade-in">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="wrench" class="w-4 h-4 text-blue-400"></i>
+          อัปเดตสถานะงาน <span id="updateModalTicketId" class="font-mono text-blue-400 text-sm">REP-000</span>
+        </h3>
+        <button onclick="closeUpdateStatusModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleStatusUpdateSubmit(event)" class="space-y-4 text-xs">
+        <input type="hidden" id="updateModalTargetTicketId">
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">เลือกสถานะใหม่ <span class="text-rose-400">*</span></label>
+          <select id="updateStatusSelect" class="w-full p-2.5 rounded-xl glass-input text-xs font-semibold" required>
+            <option value="pending">🟡 รอตรวจสอบ</option>
+            <option value="in_progress">🔵 กำลังดำเนินการ</option>
+            <option value="completed">🟢 ซ่อมเสร็จ</option>
+            <option value="external">🔴 ส่งซ่อมภายนอก</option>
+            <option value="cancelled">⚫ ยกเลิก</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">อุปกรณ์ที่เปลี่ยน / อะไหล่ที่ใช้ (ถ้ามี)</label>
+          <input 
+            type="text" 
+            id="updateReplacedEquipment" 
+            placeholder="เช่น เปลี่ยน RAM 8GB DDR4, คีย์บอร์ด USB..." 
+            class="w-full p-2.5 rounded-xl glass-input text-xs"
+          >
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">บันทึกข้อความจากช่างซ่อม (Timeline Note)</label>
+          <textarea 
+            id="updateTechNote" 
+            rows="3" 
+            placeholder="ระบุสิ่งที่ดำเนินการตรวจสอบหรือแก้ไข..." 
+            class="w-full p-2.5 rounded-xl glass-input text-xs"
+          ></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeUpdateStatusModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium">
+            ยกเลิก
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-lg shadow-blue-600/30">
+            บันทึกการอัปเดต
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- JavaScript Files -->
+  <script src="js/data.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
